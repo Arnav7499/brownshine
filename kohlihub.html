@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KohliHub — Virat Kohli Batting Highlights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<style>
+  :root{
+    --bg:#0A0A0B;
+    --bg-raised:#131316;
+    --card:#17171B;
+    --card-hover:#1D1D22;
+    --border:#26262B;
+    --border-soft:#1E1E22;
+    --text:#F3F2F0;
+    --text-dim:#9C9BA3;
+    --text-faint:#68676F;
+    --orange:#FF5A1F;
+    --orange-hot:#FF7A3D;
+    --orange-deep:#D6430A;
+  }
+  :root:not([data-theme="light"]){ color-scheme: dark; }
+  :root[data-theme="light"]{
+    --bg:#FAF9F7; --bg-raised:#FFFFFF; --card:#FFFFFF; --card-hover:#F4F3F1;
+    --border:#E7E5E1; --border-soft:#EEEDEA; --text:#17171B; --text-dim:#5C5B62; --text-faint:#9C9BA3;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#FAF9F7; --bg-raised:#FFFFFF; --card:#FFFFFF; --card-hover:#F4F3F1;
+      --border:#E7E5E1; --border-soft:#EEEDEA; --text:#17171B; --text-dim:#5C5B62; --text-faint:#9C9BA3;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{background:var(--bg); overflow-x:hidden;}
+  body{
+    margin:0; color:var(--text); font-family:'Inter',system-ui,-apple-system,sans-serif;
+    background:var(--bg); min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  .display{ font-family:'Big Shoulders Display', 'Inter', sans-serif; font-weight:800; letter-spacing:0.01em; }
+  ::-webkit-scrollbar{ height:0px; width:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
+  .no-scrollbar::-webkit-scrollbar{ display:none; }
+  .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+  .fade-in{ animation:fadeIn .35s ease both; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .drawer-enter{ animation:drawerIn .28s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes drawerIn{ from{transform:translateX(-100%);} to{transform:translateX(0);} }
+  .scrim-enter{ animation:scrimIn .28s ease both; }
+  @keyframes scrimIn{ from{opacity:0;} to{opacity:1;} }
+  .modal-enter{ animation:modalIn .22s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes modalIn{ from{opacity:0; transform:translateY(-8px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);} }
+  .heart-pop{ animation:heartPop .38s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes heartPop{ 0%{transform:scale(1);} 35%{transform:scale(1.35);} 60%{transform:scale(.92);} 100%{transform:scale(1);} }
+  .skel{ position:relative; overflow:hidden; background:var(--card); }
+  .skel::after{
+    content:""; position:absolute; inset:0; transform:translateX(-100%);
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
+    animation:shimmer 1.4s infinite;
+  }
+  @keyframes shimmer{ 100%{ transform:translateX(100%); } }
+  .focus-ring:focus-visible{ outline:2px solid var(--orange); outline-offset:2px; border-radius:6px; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo, useCallback, createContext, useContext } = React;
+
+/* ============================== ICONS ============================== */
+const Icon = ({ children, size=22, className="" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {children}
+  </svg>
+);
+const MenuIcon = (p) => <Icon {...p}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></Icon>;
+const SearchIcon = (p) => <Icon {...p}><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></Icon>;
+const UserIcon = (p) => <Icon {...p}><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></Icon>;
+const XIcon = (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
+const PlayIcon = (p) => <Icon {...p} fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"/></Icon>;
+const HeartIcon = ({filled, ...p}) => <Icon {...p} fill={filled? "currentColor":"none"}><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></Icon>;
+const ChevronLeft = (p) => <Icon {...p}><polyline points="15 18 9 12 15 6"/></Icon>;
+const ChevronRight = (p) => <Icon {...p}><polyline points="9 18 15 12 9 6"/></Icon>;
+const ClockIcon = (p) => <Icon {...p}><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></Icon>;
+const TrophyIcon = (p) => <Icon {...p}><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 5H4a1 1 0 0 0-1 1c0 3 2 5 4.5 5.3M17 5h3a1 1 0 0 1 1 1c0 3-2 5-4.5 5.3"/></Icon>;
+const InfoIcon = (p) => <Icon {...p}><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></Icon>;
+const BatIcon = (p) => <Icon {...p}><path d="M19 5 9.5 14.5a2.1 2.1 0 0 1-3 0 2.1 2.1 0 0 1 0-3L16.5 2l2.5 3z"/><path d="M8 15l-4.5 4.5"/><path d="M5 21l-2-2"/></Icon>;
+const SettingsIcon = (p) => <Icon {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.6 1z"/></Icon>;
+const ClockRewindIcon = (p) => <Icon {...p}><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/><polyline points="12 7 12 12 16 14"/></Icon>;
+
+/* ============================== DATA ============================== */
+const SHOT_TYPES = [
+  { id:"cover-drive", label:"Cover Drive" },
+  { id:"pull-shot", label:"Pull Shot" },
+  { id:"flick-shot", label:"Flick Shot" },
+  { id:"straight-drive", label:"Straight Drive" },
+  { id:"on-drive", label:"On Drive" },
+  { id:"square-cut", label:"Square Cut" },
+  { id:"late-cut", label:"Late Cut" },
+  { id:"sweep-shot", label:"Sweep Shot" },
+];
+const shotLabel = (id) => (SHOT_TYPES.find(s=>s.id===id)||{}).label || id;
+
+const SHOT_ART = {
+  "cover-drive":   { grad:["#3A1608","#0A0A0B"], glyph:"CD" },
+  "pull-shot":     { grad:["#411B06","#0A0A0B"], glyph:"PL" },
+  "flick-shot":    { grad:["#361707","#0A0A0B"], glyph:"FL" },
+  "straight-drive":{ grad:["#3D1A08","#0A0A0B"], glyph:"SD" },
+  "on-drive":      { grad:["#331505","#0A0A0B"], glyph:"OD" },
+  "square-cut":    { grad:["#401C08","#0A0A0B"], glyph:"SC" },
+  "late-cut":      { grad:["#301305","#0A0A0B"], glyph:"LC" },
+  "sweep-shot":    { grad:["#3B1807","#0A0A0B"], glyph:"SW" },
+};
+
+// To attach a real video to a highlight, add a "videoUrl" field to its object below:
+//   videoUrl: "https://www.youtube.com/watch?v=XXXXXXXXXXX"   (YouTube link, any format)
+//   videoUrl: "https://your-cdn.com/clips/cover-drive-01.mp4" (direct .mp4/.webm/.ogg file)
+// Leave it unset to keep showing the placeholder player.
+const HIGHLIGHTS = [
+  { id:"h01", title:"Elegant Cover Drive Through Point", shotType:"cover-drive", opponent:"Australia", year:2014, format:"Test", match:"2nd Test, Adelaide", description:"A textbook cover drive off the back foot, timed to perfection through the covers as Kohli announced himself as a Test captain-in-waiting.", duration:"0:42" },
+  { id:"h02", title:"Silky Cover Drive on the Up", shotType:"cover-drive", opponent:"Pakistan", year:2012, format:"ODI", match:"Asia Cup, Mirpur", description:"Kohli leans into a full delivery and drives it on the up, the ball racing away before the fielder can move.", duration:"0:35", videoUrl:"videos/cover-drive-h02.mp4" },
+  { id:"h03", title:"Cover Drive to Bring Up a Century", shotType:"cover-drive", opponent:"England", year:2018, format:"ODI", match:"3rd ODI, Headingley", description:"A crisp cover drive that brought up a landmark century during a dominant run-chase.", duration:"0:50" },
+  { id:"h04", title:"Cover Drive Off the New Ball", shotType:"cover-drive", opponent:"New Zealand", year:2016, format:"Test", match:"1st Test, Kanpur", description:"An early cover drive that put the bowlers on notice inside the first hour of play.", duration:"0:38" },
+  { id:"h05", title:"Flick Off the Pads for Four", shotType:"flick-shot", opponent:"South Africa", year:2018, format:"ODI", match:"2nd ODI, Centurion", description:"A wristy flick off the pads that sends the ball racing through mid-wicket for four.", duration:"0:33" },
+  { id:"h06", title:"Trademark Flick Through Mid-Wicket", shotType:"flick-shot", opponent:"Sri Lanka", year:2017, format:"Test", match:"2nd Test, Colombo", description:"One of Kohli's signature strokes — a full delivery on the pads, flicked away with minimal fuss.", duration:"0:29" },
+  { id:"h07", title:"Flick Shot Off a Short Ball", shotType:"flick-shot", opponent:"Pakistan", year:2012, format:"T20I", match:"Bangalore", description:"A quick-handed flick that catches the gap between square leg and mid-wicket.", duration:"0:27" },
+  { id:"h08", title:"Pull Shot Off a Short Delivery", shotType:"pull-shot", opponent:"Australia", year:2019, format:"ODI", match:"1st ODI, Mumbai", description:"Kohli rocks back and pulls a rising delivery in front of square with authority.", duration:"0:31" },
+  { id:"h09", title:"Ferocious Pull for Six", shotType:"pull-shot", opponent:"West Indies", year:2016, format:"T20I", match:"World T20, Nagpur", description:"A short ball is dispatched over deep mid-wicket in a high-pressure chase.", duration:"0:40" },
+  { id:"h10", title:"Controlled Pull Shot to Deep Square", shotType:"pull-shot", opponent:"Sri Lanka", year:2014, format:"ODI", match:"2nd ODI, Ranchi", description:"A calculated pull shot, placed rather than powered, finding the gap to deep square leg.", duration:"0:34" },
+  { id:"h11", title:"Straight Drive Down the Ground", shotType:"straight-drive", opponent:"New Zealand", year:2020, format:"Test", match:"2nd Test, Christchurch", description:"A full delivery is driven back past the bowler with a high, elegant follow-through.", duration:"0:36" },
+  { id:"h12", title:"Straight Drive for a Boundary", shotType:"straight-drive", opponent:"Bangladesh", year:2016, format:"T20I", match:"World T20, Bengaluru", description:"Kohli drives straight down the ground, splitting the two fielders at long-on and long-off.", duration:"0:30" },
+  { id:"h13", title:"On Drive Off the Front Foot", shotType:"on-drive", opponent:"England", year:2021, format:"Test", match:"4th Test, The Oval", description:"A classic on drive played with soft hands, the ball threading mid-on and mid-wicket.", duration:"0:37" },
+  { id:"h14", title:"On Drive to Open the Innings", shotType:"on-drive", opponent:"Australia", year:2013, format:"ODI", match:"7th ODI, Bengaluru", description:"An early on drive that set the tone for a record-chasing innings.", duration:"0:32" },
+  { id:"h15", title:"Square Cut Off a Short Wide Ball", shotType:"square-cut", opponent:"Pakistan", year:2016, format:"T20I", match:"World T20, Kolkata", description:"A short, wide delivery is cut hard and square under immense pressure.", duration:"0:45" },
+  { id:"h16", title:"Late Square Cut for Four", shotType:"square-cut", opponent:"South Africa", year:2015, format:"Test", match:"4th Test, Delhi", description:"Kohli waits on a bouncing delivery and cuts it late and square for four.", duration:"0:28" },
+  { id:"h17", title:"Late Cut Past Slip", shotType:"late-cut", opponent:"Sri Lanka", year:2019, format:"Test", match:"1st Test, Kolkata", description:"A delicate late cut that beats the slip cordon and races to the third-man boundary.", duration:"0:26" },
+  { id:"h18", title:"Late Cut Under Pressure", shotType:"late-cut", opponent:"West Indies", year:2016, format:"ODI", match:"3rd ODI, Port of Spain", description:"With the field set, Kohli manufactures a boundary with a fine late cut.", duration:"0:24" },
+  { id:"h19", title:"Reverse-Style Sweep for Four", shotType:"sweep-shot", opponent:"Bangladesh", year:2015, format:"Test", match:"Only Test, Fatullah", description:"A rare sweep shot against the spinners, played with soft hands to beat short fine leg.", duration:"0:31" },
+  { id:"h20", title:"Sweep Shot Against Spin", shotType:"sweep-shot", opponent:"England", year:2017, format:"ODI", match:"2nd ODI, Cuttack", description:"Kohli gets low and sweeps a length ball fine, rotating strike under a tightening field.", duration:"0:29" },
+  { id:"h21", title:"Cover Drive to Seal the Chase", shotType:"cover-drive", opponent:"Australia", year:2016, format:"ODI", match:"2nd ODI, Brisbane", description:"The winning boundary — an unhurried cover drive that finished the chase in style.", duration:"0:33" },
+  { id:"h22", title:"Pull Shot in a Marathon Innings", shotType:"pull-shot", opponent:"Pakistan", year:2012, format:"ODI", match:"Asia Cup, Mirpur", description:"Part of a long, chanceless innings — a pull shot played with total control.", duration:"0:39" },
+];
+
+const BEST_INNINGS = [
+  { id:"i01", score:"183", opponent:"Pakistan", format:"ODI", year:2012, match:"Asia Cup, Mirpur", context:"A chase-defining innings against Pakistan, widely remembered as one of the great one-day knocks.", shotType:"cover-drive" },
+  { id:"i02", score:"235", opponent:"England", format:"Test", year:2016, match:"5th Test, Mumbai", context:"A marathon double-century built on patience and near-total control across both innings.", shotType:"straight-drive" },
+  { id:"i03", score:"82*", opponent:"Pakistan", format:"T20I", year:2016, match:"World T20, Kolkata", context:"A composed unbeaten innings under floodlights that guided a tense chase home.", shotType:"square-cut" },
+  { id:"i04", score:"254*", opponent:"South Africa", format:"Test", year:2019, match:"3rd Test, Pune", context:"His highest Test score, built over two full days of disciplined, watchful batting.", shotType:"flick-shot" },
+  { id:"i05", score:"133", opponent:"Australia", format:"ODI", year:2013, match:"7th ODI, Bengaluru", context:"An innings that helped chase down one of the highest totals in ODI history at the time.", shotType:"on-drive" },
+  { id:"i06", score:"122", opponent:"South Africa", format:"ODI", year:2018, match:"2nd ODI, Centurion", context:"A commanding hundred on a tour widely regarded as one of his finest overseas.", shotType:"pull-shot" },
+];
+
+const FORMATS = ["Test","ODI","T20I"];
+
+/* ============================== HELPERS ============================== */
+function safeGet(key, fallback){
+  try{
+    const raw = window.localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  }catch(e){ return fallback; }
+}
+function safeSet(key, value){
+  try{ window.localStorage.setItem(key, JSON.stringify(value)); }catch(e){ /* ignore */ }
+}
+
+function parseHash(){
+  let h = window.location.hash.replace(/^#\/?/, "");
+  if(!h) return { page:"home", param:null };
+  const parts = h.split("/").filter(Boolean);
+  if(parts[0] === "shots" && parts[1]) return { page:"shot", param:parts[1] };
+  if(parts[0] === "highlight" && parts[1]) return { page:"highlight", param:parts[1] };
+  if(parts[0] === "best-innings") return { page:"best-innings", param:null };
+  if(parts[0] === "about") return { page:"about", param:null };
+  if(parts[0] === "favorites") return { page:"favorites", param:null };
+  if(parts[0] === "recent") return { page:"recent", param:null };
+  if(parts[0] === "settings") return { page:"settings", param:null };
+  return { page:"home", param:null };
+}
+function useRoute(){
+  const [route, setRoute] = useState(parseHash());
+  useEffect(()=>{
+    const onChange = () => setRoute(parseHash());
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
+  },[]);
+  return route;
+}
+function navigate(hash){
+  window.location.hash = hash;
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+/* ============================== APP CONTEXT (favorites / recent) ============================== */
+const AppCtx = createContext(null);
+function AppProvider({ children }){
+  const [favorites, setFavorites] = useState(() => safeGet("kh_favorites", []));
+  const [recent, setRecent] = useState(() => safeGet("kh_recent", []));
+
+  const toggleFavorite = useCallback((id) => {
+    setFavorites(prev => {
+      const next = prev.includes(id) ? prev.filter(x=>x!==id) : [id, ...prev];
+      safeSet("kh_favorites", next);
+      return next;
+    });
+  },[]);
+  const isFavorite = useCallback((id) => favorites.includes(id), [favorites]);
+  const addRecent = useCallback((id) => {
+    setRecent(prev => {
+      const next = [id, ...prev.filter(x=>x!==id)].slice(0, 12);
+      safeSet("kh_recent", next);
+      return next;
+    });
+  },[]);
+
+  return (
+    <AppCtx.Provider value={{ favorites, toggleFavorite, isFavorite, recent, addRecent }}>
+      {children}
+    </AppCtx.Provider>
+  );
+}
+const useApp = () => useContext(AppCtx);
+
+/* ============================== SMALL UI PIECES ============================== */
+function ThumbArt({ shotType, size="md" }){
+  const art = SHOT_ART[shotType] || SHOT_ART["cover-drive"];
+  return (
+    <div className="absolute inset-0" style={{
+      background:`linear-gradient(135deg, ${art.grad[0]} 0%, ${art.grad[1]} 70%)`
+    }}>
+      <div className="absolute inset-0 opacity-[0.10]" style={{
+        backgroundImage:"repeating-linear-gradient(115deg, #fff 0px, #fff 1px, transparent 1px, transparent 34px)"
+      }}/>
+      <div className="absolute -right-3 -bottom-4 opacity-[0.16]">
+        <BatIcon size={size==="lg" ? 130 : 84} />
+      </div>
+      <div className="absolute left-3 bottom-2 md:left-4 md:bottom-3 display text-white/[0.14]" style={{fontSize: size==="lg" ? "4.2rem" : "2.6rem", lineHeight:1}}>
+        {art.glyph}
+      </div>
+    </div>
+  );
+}
+
+function Badge({ children, tone="orange" }){
+  const styles = tone === "orange"
+    ? { background:"rgba(255,90,31,0.14)", color:"var(--orange-hot)", border:"1px solid rgba(255,90,31,0.3)" }
+    : { background:"var(--card-hover)", color:"var(--text-dim)", border:"1px solid var(--border)" };
+  return (
+    <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold tracking-wide" style={styles}>
+      {children}
+    </span>
+  );
+}
+
+function FavoriteButton({ id, className="", size=18 }){
+  const { isFavorite, toggleFavorite } = useApp();
+  const [pop, setPop] = useState(false);
+  const fav = isFavorite(id);
+  return (
+    <button
+      aria-label={fav ? "Remove from favorites" : "Add to favorites"}
+      onClick={(e)=>{ e.stopPropagation(); e.preventDefault(); toggleFavorite(id); setPop(true); setTimeout(()=>setPop(false), 380); }}
+      className={"focus-ring flex items-center justify-center rounded-full transition-colors "+className}
+      style={{ color: fav ? "var(--orange)" : "var(--text-dim)" }}
+    >
+      <HeartIcon size={size} filled={fav} className={pop ? "heart-pop" : ""} />
+    </button>
+  );
+}
+
+function HighlightCard({ h, compact=false }){
+  return (
+    <a
+      href={"#/highlight/"+h.id}
+      className="group block rounded-2xl overflow-hidden border transition-all duration-300 hover:-translate-y-0.5"
+      style={{ background:"var(--card)", borderColor:"var(--border)" }}
+    >
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio:"16/9" }}>
+        <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105">
+          <ThumbArt shotType={h.shotType} />
+        </div>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+               style={{ background:"rgba(10,10,11,0.55)", border:"1px solid rgba(255,255,255,0.25)", backdropFilter:"blur(4px)" }}>
+            <PlayIcon size={18} className="text-white/80 group-hover:text-white translate-x-[1px]" />
+          </div>
+        </div>
+        <div className="absolute top-2 left-2"><Badge>{shotLabel(h.shotType)}</Badge></div>
+        <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[11px] font-medium text-white/85" style={{ background:"rgba(0,0,0,0.55)" }}>
+          {h.duration}
+        </div>
+      </div>
+      <div className="p-3">
+        <h3 className="text-[14px] font-semibold leading-snug line-clamp-2" style={{ color:"var(--text)" }}>{h.title}</h3>
+        <div className="mt-1.5 flex items-center justify-between">
+          <p className="text-[12px]" style={{ color:"var(--text-dim)" }}>vs {h.opponent} · {h.year} · {h.format}</p>
+          <FavoriteButton id={h.id} />
+        </div>
+      </div>
+    </a>
+  );
+}
+
+function SkeletonCard(){
+  return (
+    <div className="rounded-2xl overflow-hidden border" style={{ borderColor:"var(--border)" }}>
+      <div className="skel" style={{ aspectRatio:"16/9" }} />
+      <div className="p-3 space-y-2">
+        <div className="skel h-3.5 w-4/5 rounded" />
+        <div className="skel h-3 w-2/5 rounded" />
+      </div>
+    </div>
+  );
+}
+
+/* ============================== LOGO ============================== */
+function Logo({ size="md" }){
+  const txt = size === "lg" ? "text-2xl" : "text-[17px]";
+  return (
+    <a href="#/" className="flex items-center gap-1 select-none focus-ring rounded-md">
+      <span className={"display "+txt} style={{ color:"var(--text)" }}>Kohli</span>
+      <span
+        className={"display "+txt+" px-1.5 rounded-md"}
+        style={{ background:"var(--orange)", color:"#0A0A0B" }}
+      >Hub</span>
+    </a>
+  );
+}
+
+/* ============================== HEADER ============================== */
+function Header({ onMenu, onSearch, onProfile }){
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(()=>{
+    const onScroll = () => setScrolled(window.scrollY > 6);
+    window.addEventListener("scroll", onScroll);
+    return ()=>window.removeEventListener("scroll", onScroll);
+  },[]);
+  return (
+    <header
+      className="sticky top-0 z-30 transition-shadow duration-300"
+      style={{
+        background: scrolled ? "rgba(10,10,11,0.82)" : "rgba(10,10,11,0.55)",
+        backdropFilter:"blur(10px)",
+        borderBottom:"1px solid var(--border-soft)",
+      }}
+    >
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+        <button aria-label="Open menu" onClick={onMenu} className="focus-ring p-2 -ml-2 rounded-lg hover:bg-white/5 transition-colors">
+          <MenuIcon size={21} style={{ color:"var(--text)" }} />
+        </button>
+
+        <div className="md:hidden absolute left-1/2 -translate-x-1/2">
+          <Logo />
+        </div>
+        <div className="hidden md:flex items-center gap-8">
+          <Logo />
+          <nav className="flex items-center gap-6">
+            <a href="#/" className="text-[13px] font-medium hover:text-[var(--orange)] transition-colors" style={{ color:"var(--text-dim)" }}>Home</a>
+            <a href="#/best-innings" className="text-[13px] font-medium hover:text-[var(--orange)] transition-colors" style={{ color:"var(--text-dim)" }}>Best Innings</a>
+            <a href="#/about" className="text-[13px] font-medium hover:text-[var(--orange)] transition-colors" style={{ color:"var(--text-dim)" }}>About</a>
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button aria-label="Search" onClick={onSearch} className="focus-ring p-2 rounded-lg hover:bg-white/5 transition-colors">
+            <SearchIcon size={20} style={{ color:"var(--text)" }} />
+          </button>
+          <button aria-label="Profile" onClick={onProfile} className="focus-ring p-1.5 rounded-full hover:bg-white/5 transition-colors">
+            <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background:"var(--card-hover)", border:"1px solid var(--border)" }}>
+              <UserIcon size={16} style={{ color:"var(--text-dim)" }} />
+            </span>
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+/* ============================== DRAWER (hamburger menu) ============================== */
+function Drawer({ open, onClose }){
+  if(!open) return null;
+  const items = [
+    { label:"Home", href:"#/" },
+    { label:"Popular Shots", href:"#/", divider:true },
+    { label:"Pull Shot", href:"#/shots/pull-shot" },
+    { label:"Cover Drive", href:"#/shots/cover-drive" },
+    { label:"Flick Shot", href:"#/shots/flick-shot" },
+    { label:"Straight Drive", href:"#/shots/straight-drive" },
+    { label:"On Drive", href:"#/shots/on-drive" },
+    { label:"Square Cut", href:"#/shots/square-cut" },
+    { label:"Late Cut", href:"#/shots/late-cut" },
+    { label:"Sweep Shot", href:"#/shots/sweep-shot", divider:true },
+    { label:"Best Innings", href:"#/best-innings" },
+    { label:"About KohliHub", href:"#/about" },
+  ];
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 scrim-enter" style={{ background:"rgba(0,0,0,0.6)" }} onClick={onClose} />
+      <div className="drawer-enter absolute left-0 top-0 bottom-0 w-[78%] max-w-[300px] flex flex-col"
+           style={{ background:"var(--bg-raised)", borderRight:"1px solid var(--border)" }}>
+        <div className="h-14 flex items-center justify-between px-4 border-b" style={{ borderColor:"var(--border-soft)" }}>
+          <Logo />
+          <button aria-label="Close menu" onClick={onClose} className="focus-ring p-2 rounded-lg hover:bg-white/5">
+            <XIcon size={19} style={{ color:"var(--text)" }} />
+          </button>
+        </div>
+        <nav className="flex-1 overflow-y-auto py-2">
+          {items.map((it,i)=>(
+            <React.Fragment key={i}>
+              <a
+                href={it.href}
+                onClick={onClose}
+                className="block px-5 py-3 text-[14.5px] font-medium hover:bg-white/5 transition-colors focus-ring"
+                style={{ color:"var(--text)" }}
+              >{it.label}</a>
+              {it.divider && <div className="h-px mx-5 my-1" style={{ background:"var(--border-soft)" }} />}
+            </React.Fragment>
+          ))}
+        </nav>
+        <div className="p-4 text-[11px] leading-relaxed" style={{ color:"var(--text-faint)", borderTop:"1px solid var(--border-soft)" }}>
+          Unofficial fan project. Not affiliated with Virat Kohli, BCCI or ICC.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== CATEGORY NAV ============================== */
+function CategoryNav({ active }){
+  const cats = [{ id:"all", label:"ALL" }, ...SHOT_TYPES.map(s=>({ id:s.id, label:s.label.toUpperCase() }))];
+  return (
+    <div className="sticky top-14 z-20" style={{ background:"var(--bg)", borderBottom:"1px solid var(--border-soft)" }}>
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-3">
+          {cats.map(c => {
+            const isActive = active === c.id;
+            const href = c.id === "all" ? "#/" : "#/shots/"+c.id;
+            return (
+              <a
+                key={c.id}
+                href={href}
+                className="focus-ring shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-semibold tracking-wide transition-colors"
+                style={ isActive
+                  ? { background:"var(--orange)", color:"#0A0A0B" }
+                  : { background:"var(--card)", color:"var(--text-dim)", border:"1px solid var(--border)" } }
+              >{c.label}</a>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== SEARCH MODAL ============================== */
+function SearchModal({ open, onClose }){
+  const [q, setQ] = useState("");
+  const inputRef = useRef(null);
+  useEffect(()=>{ if(open){ setQ(""); setTimeout(()=>inputRef.current && inputRef.current.focus(), 60); } },[open]);
+  useEffect(()=>{
+    const onKey = (e) => { if(e.key === "Escape") onClose(); };
+    if(open) window.addEventListener("keydown", onKey);
+    return ()=>window.removeEventListener("keydown", onKey);
+  },[open,onClose]);
+
+  const results = useMemo(()=>{
+    const term = q.trim().toLowerCase();
+    if(!term) return [];
+    return HIGHLIGHTS.filter(h =>
+      h.title.toLowerCase().includes(term) ||
+      h.opponent.toLowerCase().includes(term) ||
+      String(h.year).includes(term) ||
+      h.format.toLowerCase().includes(term) ||
+      h.match.toLowerCase().includes(term) ||
+      shotLabel(h.shotType).toLowerCase().includes(term)
+    );
+  },[q]);
+
+  if(!open) return null;
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 scrim-enter" style={{ background:"rgba(0,0,0,0.65)" }} onClick={onClose} />
+      <div className="absolute inset-x-0 top-0 md:top-16 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[560px] modal-enter">
+        <div className="mx-3 mt-3 md:mx-0 rounded-2xl overflow-hidden border" style={{ background:"var(--bg-raised)", borderColor:"var(--border)" }}>
+          <div className="flex items-center gap-3 px-4 h-14 border-b" style={{ borderColor:"var(--border-soft)" }}>
+            <SearchIcon size={19} style={{ color:"var(--text-dim)" }} />
+            <input
+              ref={inputRef}
+              value={q}
+              onChange={e=>setQ(e.target.value)}
+              placeholder="Search shot, opponent, year, format..."
+              className="flex-1 bg-transparent outline-none text-[15px]"
+              style={{ color:"var(--text)" }}
+            />
+            <button aria-label="Close search" onClick={onClose} className="focus-ring p-1.5 rounded-lg hover:bg-white/5">
+              <XIcon size={18} style={{ color:"var(--text-dim)" }} />
+            </button>
+          </div>
+          <div className="max-h-[62vh] overflow-y-auto p-3">
+            {q.trim() === "" && (
+              <div className="px-2 py-6 text-center text-[13px]" style={{ color:"var(--text-faint)" }}>
+                Try "cover drive", "Australia", "2016", or "ODI"
+              </div>
+            )}
+            {q.trim() !== "" && results.length === 0 && (
+              <div className="px-2 py-10 text-center">
+                <p className="text-[14px] font-semibold" style={{ color:"var(--text)" }}>No highlights found</p>
+                <p className="text-[12.5px] mt-1" style={{ color:"var(--text-faint)" }}>Try a different shot, opponent, or year.</p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-1">
+              {results.map(h => (
+                <a key={h.id} href={"#/highlight/"+h.id} onClick={onClose}
+                   className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors">
+                  <div className="relative w-16 h-10 rounded-lg overflow-hidden shrink-0">
+                    <ThumbArt shotType={h.shotType} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[13.5px] font-medium truncate" style={{ color:"var(--text)" }}>{h.title}</p>
+                    <p className="text-[11.5px]" style={{ color:"var(--text-dim)" }}>{shotLabel(h.shotType)} · vs {h.opponent} · {h.year}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== PROFILE MENU ============================== */
+function ProfileMenu({ open, onClose }){
+  if(!open) return null;
+  const items = [
+    { label:"My Favorites", icon:HeartIcon, href:"#/favorites" },
+    { label:"Recently Watched", icon:ClockRewindIcon, href:"#/recent" },
+    { label:"Settings", icon:SettingsIcon, href:"#/settings" },
+    { label:"About KohliHub", icon:InfoIcon, href:"#/about" },
+  ];
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="absolute right-3 top-14 md:right-6 w-64 rounded-2xl overflow-hidden border modal-enter"
+           style={{ background:"var(--bg-raised)", borderColor:"var(--border)" }}>
+        <div className="px-4 py-3.5 border-b flex items-center gap-3" style={{ borderColor:"var(--border-soft)" }}>
+          <span className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background:"var(--card-hover)", border:"1px solid var(--border)" }}>
+            <UserIcon size={18} style={{ color:"var(--text-dim)" }} />
+          </span>
+          <div>
+            <p className="text-[13.5px] font-semibold" style={{ color:"var(--text)" }}>Fan Profile</p>
+            <p className="text-[11.5px]" style={{ color:"var(--text-faint)" }}>No sign-in needed</p>
+          </div>
+        </div>
+        <div className="py-1.5">
+          {items.map((it,i)=>(
+            <a key={i} href={it.href} onClick={onClose}
+               className="flex items-center gap-3 px-4 py-2.5 text-[13.5px] font-medium hover:bg-white/5 transition-colors">
+              <it.icon size={17} style={{ color:"var(--text-dim)" }} />
+              <span style={{ color:"var(--text)" }}>{it.label}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== HERO / FEATURED CARD ============================== */
+function FeaturedCard({ h }){
+  return (
+    <a href={"#/highlight/"+h.id} className="group block rounded-2xl overflow-hidden border relative"
+       style={{ background:"var(--card)", borderColor:"var(--border)" }}>
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio:"16/10" }}>
+        <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105">
+          <ThumbArt shotType={h.shotType} size="lg" />
+        </div>
+        <div className="absolute inset-0" style={{ background:"linear-gradient(0deg, rgba(10,10,11,0.9) 0%, rgba(10,10,11,0.15) 55%, transparent 100%)" }} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+               style={{ background:"rgba(10,10,11,0.5)", border:"1px solid rgba(255,255,255,0.3)", backdropFilter:"blur(4px)" }}>
+            <PlayIcon size={26} className="text-white translate-x-[2px]" />
+          </div>
+        </div>
+        <div className="absolute top-3 left-3 flex gap-2">
+          <Badge>{shotLabel(h.shotType)}</Badge>
+          <Badge tone="neutral">{h.format}</Badge>
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
+          <p className="text-[12px] font-semibold tracking-wide mb-1" style={{ color:"var(--orange-hot)" }}>FEATURED HIGHLIGHT</p>
+          <h2 className="display text-white text-[26px] md:text-[34px] leading-[1.05] mb-2">{h.title}</h2>
+          <p className="text-white/70 text-[13px] md:text-[14px] max-w-lg mb-2">{h.description}</p>
+          <p className="text-white/50 text-[12px]">{h.match} · vs {h.opponent} · {h.year} · {h.duration}</p>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+/* ============================== PAGES ============================== */
+function SectionHeading({ eyebrow, title, subtitle }){
+  return (
+    <div className="mb-4">
+      {eyebrow && <p className="text-[12px] font-semibold mb-1" style={{ color:"var(--orange-hot)" }}>{eyebrow}</p>}
+      <h2 className="display text-[22px] md:text-[28px]" style={{ color:"var(--text)" }}>{title}</h2>
+      {subtitle && <p className="text-[13.5px] mt-1 max-w-xl" style={{ color:"var(--text-dim)" }}>{subtitle}</p>}
+    </div>
+  );
+}
+
+function HomePage(){
+  const [loaded, setLoaded] = useState(false);
+  useEffect(()=>{ const t = setTimeout(()=>setLoaded(true), 350); return ()=>clearTimeout(t); },[]);
+  const featured = HIGHLIGHTS[1];
+  const grid = HIGHLIGHTS.slice(0, 8);
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 pt-6 pb-16 fade-in">
+      <div className="mb-6">
+        <h1 className="display text-[28px] md:text-[42px] leading-[1.05] max-w-2xl" style={{ color:"var(--text)" }}>
+          Watch Virat Kohli's Most Iconic Batting Moments
+        </h1>
+        <p className="text-[14px] md:text-[15px] mt-3 max-w-lg" style={{ color:"var(--text-dim)" }}>
+          Explore legendary shots, unforgettable innings and classic Kohli moments.
+        </p>
+      </div>
+
+      {loaded ? <FeaturedCard h={featured} /> : <div className="skel rounded-2xl" style={{ aspectRatio:"16/10" }} />}
+
+      <div className="mt-10">
+        <SectionHeading eyebrow="BROWSE BY SHOT" title="Signature Shots" subtitle="Jump straight to a shot type and see every highlight in that style." />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {SHOT_TYPES.map(s => (
+            <a key={s.id} href={"#/shots/"+s.id}
+               className="group relative rounded-2xl overflow-hidden border h-24 flex items-end p-3"
+               style={{ borderColor:"var(--border)" }}>
+              <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105"><ThumbArt shotType={s.id} /></div>
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+              <span className="relative text-[13px] font-semibold text-white">{s.label}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-10">
+        <div className="flex items-end justify-between mb-4">
+          <SectionHeading eyebrow="LATEST ADDS" title="Popular Highlights" />
+          <a href="#/shots/cover-drive" className="text-[12.5px] font-semibold flex items-center gap-1 shrink-0" style={{ color:"var(--orange)" }}>
+            See all <ChevronRight size={14} />
+          </a>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {loaded ? grid.map(h => <HighlightCard key={h.id} h={h} />) : Array.from({length:8}).map((_,i)=><SkeletonCard key={i} />)}
+        </div>
+      </div>
+
+      <div className="mt-10 rounded-2xl border p-5 md:p-7 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+           style={{ background:"var(--card)", borderColor:"var(--border)" }}>
+        <div>
+          <p className="text-[12px] font-semibold mb-1" style={{ color:"var(--orange-hot)" }}>MEMORABLE KNOCKS</p>
+          <h3 className="display text-[20px] md:text-[24px]" style={{ color:"var(--text)" }}>Explore the Best Innings</h3>
+          <p className="text-[13.5px] mt-1" style={{ color:"var(--text-dim)" }}>Complete match-winning innings, shot by shot.</p>
+        </div>
+        <a href="#/best-innings" className="focus-ring shrink-0 px-5 py-2.5 rounded-xl text-[13.5px] font-semibold text-center transition-colors"
+           style={{ background:"var(--orange)", color:"#0A0A0B" }}>
+          View Best Innings
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function ShotPage({ shotId }){
+  const [loaded, setLoaded] = useState(false);
+  useEffect(()=>{ setLoaded(false); const t = setTimeout(()=>setLoaded(true), 300); return ()=>clearTimeout(t); },[shotId]);
+  const [formatFilter, setFormatFilter] = useState("ALL");
+
+  const all = useMemo(()=>HIGHLIGHTS.filter(h=>h.shotType===shotId), [shotId]);
+  const list = useMemo(()=> formatFilter==="ALL" ? all : all.filter(h=>h.format===formatFilter), [all, formatFilter]);
+  const featured = all[0];
+
+  if(!SHOT_TYPES.find(s=>s.id===shotId)){
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-16 text-center">
+        <p className="display text-2xl mb-2" style={{ color:"var(--text)" }}>Shot not found</p>
+        <a href="#/" className="text-[13px] font-semibold" style={{ color:"var(--orange)" }}>Back to home</a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 pt-6 pb-16 fade-in">
+      <h1 className="display text-[26px] md:text-[36px]" style={{ color:"var(--text)" }}>Virat Kohli {shotLabel(shotId)}s</h1>
+      <p className="text-[13.5px] md:text-[14.5px] mt-2 max-w-xl" style={{ color:"var(--text-dim)" }}>
+        Explore some of Virat Kohli's memorable {shotLabel(shotId).toLowerCase()} moments across Test, ODI and T20 cricket.
+      </p>
+
+      {featured && (
+        <div className="mt-6">
+          {loaded ? <FeaturedCard h={featured} /> : <div className="skel rounded-2xl" style={{ aspectRatio:"16/10" }} />}
+        </div>
+      )}
+
+      <div className="mt-8 flex items-center justify-between flex-wrap gap-3">
+        <h2 className="display text-[19px]" style={{ color:"var(--text)" }}>All {shotLabel(shotId)} Highlights</h2>
+        <div className="flex gap-2">
+          {["ALL", ...FORMATS].map(f => (
+            <button key={f} onClick={()=>setFormatFilter(f)}
+              className="focus-ring px-3 py-1 rounded-full text-[11.5px] font-semibold transition-colors"
+              style={ formatFilter===f
+                ? { background:"var(--orange)", color:"#0A0A0B" }
+                : { background:"var(--card)", color:"var(--text-dim)", border:"1px solid var(--border)" } }
+            >{f}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+        {!loaded && Array.from({length:4}).map((_,i)=><SkeletonCard key={i} />)}
+        {loaded && list.map(h => <HighlightCard key={h.id} h={h} />)}
+      </div>
+      {loaded && list.length===0 && (
+        <div className="py-14 text-center">
+          <p className="text-[14px] font-semibold" style={{ color:"var(--text)" }}>No highlights in this format yet</p>
+          <p className="text-[12.5px] mt-1" style={{ color:"var(--text-faint)" }}>Try a different format filter.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function youTubeEmbedUrl(url){
+  try{
+    const u = new URL(url);
+    if(u.hostname.includes("youtu.be")) return "https://www.youtube.com/embed/"+u.pathname.slice(1);
+    if(u.hostname.includes("youtube.com")){
+      const vid = u.searchParams.get("v");
+      if(vid) return "https://www.youtube.com/embed/"+vid;
+      if(u.pathname.startsWith("/embed/")) return url;
+    }
+  }catch(e){ /* not a valid URL */ }
+  return null;
+}
+
+function VideoPlayer({ h }){
+  const [playing, setPlaying] = useState(false);
+  const url = h.videoUrl;
+  const ytEmbed = url ? youTubeEmbedUrl(url) : null;
+  const isDirectFile = url && !ytEmbed && /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+
+  // No video source provided — show the demo placeholder.
+  if(!url){
+    return (
+      <div className="relative w-full rounded-2xl overflow-hidden border" style={{ aspectRatio:"16/9", borderColor:"var(--border)" }}>
+        <ThumbArt shotType={h.shotType} size="lg" />
+        <div className="absolute inset-0 bg-black/25 flex flex-col items-center justify-center gap-3">
+          <button aria-label="Play highlight" className="focus-ring w-16 h-16 rounded-full flex items-center justify-center transition-transform hover:scale-105"
+               style={{ background:"rgba(10,10,11,0.55)", border:"1px solid rgba(255,255,255,0.3)", backdropFilter:"blur(4px)" }}>
+            <PlayIcon size={26} className="text-white translate-x-[2px]" />
+          </button>
+          <p className="text-white/70 text-[11.5px] px-3 py-1 rounded-full" style={{ background:"rgba(10,10,11,0.5)" }}>
+            Demo placeholder — video not available in this preview
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if(ytEmbed){
+    return (
+      <div className="relative w-full rounded-2xl overflow-hidden border" style={{ aspectRatio:"16/9", borderColor:"var(--border)" }}>
+        <iframe
+          src={ytEmbed}
+          title={h.title}
+          className="absolute inset-0 w-full h-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  if(isDirectFile){
+    return (
+      <div className="relative w-full rounded-2xl overflow-hidden border bg-black" style={{ aspectRatio:"16/9", borderColor:"var(--border)" }}>
+        <video
+          className="absolute inset-0 w-full h-full"
+          src={url}
+          controls
+          playsInline
+          poster=""
+        />
+      </div>
+    );
+  }
+
+  // videoUrl set but not a recognizable format — fall back to placeholder with a note.
+  return (
+    <div className="relative w-full rounded-2xl overflow-hidden border" style={{ aspectRatio:"16/9", borderColor:"var(--border)" }}>
+      <ThumbArt shotType={h.shotType} size="lg" />
+      <div className="absolute inset-0 bg-black/25 flex flex-col items-center justify-center gap-3">
+        <PlayIcon size={26} className="text-white/70" />
+        <p className="text-white/70 text-[11.5px] px-3 py-1 rounded-full text-center max-w-[80%]" style={{ background:"rgba(10,10,11,0.5)" }}>
+          Couldn't recognize this video link — use a direct .mp4/.webm URL or a YouTube link
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function HighlightDetailPage({ id }){
+  const { addRecent } = useApp();
+  const h = HIGHLIGHTS.find(x=>x.id===id);
+  useEffect(()=>{ if(h) addRecent(h.id); /* eslint-disable-next-line */ },[id]);
+
+  if(!h){
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-16 text-center">
+        <p className="display text-2xl mb-2" style={{ color:"var(--text)" }}>Highlight not found</p>
+        <a href="#/" className="text-[13px] font-semibold" style={{ color:"var(--orange)" }}>Back to home</a>
+      </div>
+    );
+  }
+  const related = HIGHLIGHTS.filter(x=>x.shotType===h.shotType && x.id!==h.id).slice(0,4);
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 pt-4 pb-16 fade-in">
+      <button onClick={()=>window.history.length>1 ? window.history.back() : navigate("#/")}
+              className="focus-ring flex items-center gap-1 text-[13px] font-medium mb-4 hover:text-[var(--orange)] transition-colors"
+              style={{ color:"var(--text-dim)" }}>
+        <ChevronLeft size={16} /> Back
+      </button>
+
+      <VideoPlayer h={h} />
+
+      <div className="mt-5 flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Badge>{shotLabel(h.shotType)}</Badge>
+            <Badge tone="neutral">{h.format}</Badge>
+          </div>
+          <h1 className="display text-[22px] md:text-[30px]" style={{ color:"var(--text)" }}>{h.title}</h1>
+        </div>
+        <FavoriteButton id={h.id} size={24} className="mt-1 shrink-0" />
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[13px]">
+        {[["Match", h.match], ["Opponent", h.opponent], ["Year", h.year], ["Duration", h.duration]].map(([k,v]) => (
+          <div key={k} className="rounded-xl border px-3 py-2.5" style={{ background:"var(--card)", borderColor:"var(--border)" }}>
+            <p className="text-[11px]" style={{ color:"var(--text-faint)" }}>{k}</p>
+            <p className="font-medium mt-0.5" style={{ color:"var(--text)" }}>{v}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-5 text-[14px] leading-relaxed max-w-2xl" style={{ color:"var(--text-dim)" }}>{h.description}</p>
+
+      {related.length > 0 && (
+        <div className="mt-10">
+          <SectionHeading title="More Kohli Moments" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {related.map(r => <HighlightCard key={r.id} h={r} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BestInningsPage(){
+  return (
+    <div className="max-w-6xl mx-auto px-4 pt-6 pb-16 fade-in">
+      <h1 className="display text-[26px] md:text-[36px]" style={{ color:"var(--text)" }}>Best Innings</h1>
+      <p className="text-[13.5px] md:text-[14.5px] mt-2 max-w-xl" style={{ color:"var(--text-dim)" }}>
+        A curated set of memorable Virat Kohli innings across formats. Figures shown are sample/reference data for this demo.
+      </p>
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {BEST_INNINGS.map(inn => (
+          <div key={inn.id} className="rounded-2xl overflow-hidden border flex flex-col sm:flex-row" style={{ background:"var(--card)", borderColor:"var(--border)" }}>
+            <div className="relative sm:w-40 shrink-0" style={{ aspectRatio: "16/10" }}>
+              <ThumbArt shotType={inn.shotType} />
+              <div className="absolute top-2 left-2"><TrophyIcon size={16} className="text-white/80" /></div>
+            </div>
+            <div className="p-4 flex-1">
+              <p className="text-[11px] font-semibold tracking-wide" style={{ color:"var(--orange-hot)" }}>VIRAT KOHLI</p>
+              <p className="display text-[30px] leading-none mt-1" style={{ color:"var(--text)" }}>{inn.score}</p>
+              <p className="text-[13px] mt-1.5" style={{ color:"var(--text-dim)" }}>vs {inn.opponent} · {inn.format} · {inn.year}</p>
+              <p className="text-[12.5px] mt-2 leading-relaxed" style={{ color:"var(--text-faint)" }}>{inn.context}</p>
+              <a href={"#/shots/"+inn.shotType} className="focus-ring inline-flex items-center gap-1 mt-3 text-[12.5px] font-semibold" style={{ color:"var(--orange)" }}>
+                Watch Highlights <ChevronRight size={14} />
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AboutPage(){
+  return (
+    <div className="max-w-3xl mx-auto px-4 pt-6 pb-16 fade-in">
+      <h1 className="display text-[26px] md:text-[36px]" style={{ color:"var(--text)" }}>About KohliHub</h1>
+      <p className="text-[14px] mt-3 leading-relaxed" style={{ color:"var(--text-dim)" }}>
+        KohliHub is a fan-made project created to organize and explore memorable Virat Kohli batting moments by shot type.
+      </p>
+
+      <div className="mt-8 space-y-8">
+        <div>
+          <h2 className="display text-[18px] mb-2" style={{ color:"var(--text)" }}>Popular Shots</h2>
+          <p className="text-[13.5px] leading-relaxed" style={{ color:"var(--text-dim)" }}>
+            Browse highlights grouped by cover drive, pull shot, flick shot, straight drive, on drive, square cut, late cut, and sweep shot — each with its own dedicated page.
+          </p>
+        </div>
+        <div>
+          <h2 className="display text-[18px] mb-2" style={{ color:"var(--text)" }}>How It Works</h2>
+          <p className="text-[13.5px] leading-relaxed" style={{ color:"var(--text-dim)" }}>
+            This is a demo/reference build: highlight details, match data, and thumbnails shown here are sample content used to illustrate the product experience, not licensed footage or verified statistics.
+          </p>
+        </div>
+        <div>
+          <h2 className="display text-[18px] mb-2" style={{ color:"var(--text)" }}>Media Rights &amp; Disclaimer</h2>
+          <p className="text-[13.5px] leading-relaxed" style={{ color:"var(--text-dim)" }}>
+            KohliHub is an unofficial fan project and is not affiliated with Virat Kohli, BCCI, ICC, or any broadcaster. All media rights belong to their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ title, subtitle, cta }){
+  return (
+    <div className="py-16 text-center">
+      <p className="display text-[20px] mb-1.5" style={{ color:"var(--text)" }}>{title}</p>
+      <p className="text-[13px] mb-5" style={{ color:"var(--text-faint)" }}>{subtitle}</p>
+      {cta}
+    </div>
+  );
+}
+
+function FavoritesPage(){
+  const { favorites } = useApp();
+  const list = HIGHLIGHTS.filter(h => favorites.includes(h.id));
+  return (
+    <div className="max-w-6xl mx-auto px-4 pt-6 pb-16 fade-in">
+      <h1 className="display text-[24px] md:text-[32px]" style={{ color:"var(--text)" }}>My Favorites</h1>
+      <p className="text-[13.5px] mt-1.5" style={{ color:"var(--text-dim)" }}>Highlights you've saved on this device.</p>
+      {list.length === 0 ? (
+        <EmptyState title="No favorites yet" subtitle="Tap the heart icon on any highlight to save it here."
+          cta={<a href="#/" className="focus-ring px-5 py-2.5 rounded-xl text-[13.5px] font-semibold" style={{ background:"var(--orange)", color:"#0A0A0B" }}>Browse highlights</a>} />
+      ) : (
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {list.map(h => <HighlightCard key={h.id} h={h} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecentPage(){
+  const { recent } = useApp();
+  const list = recent.map(id => HIGHLIGHTS.find(h=>h.id===id)).filter(Boolean);
+  return (
+    <div className="max-w-6xl mx-auto px-4 pt-6 pb-16 fade-in">
+      <h1 className="display text-[24px] md:text-[32px]" style={{ color:"var(--text)" }}>Recently Watched</h1>
+      <p className="text-[13.5px] mt-1.5" style={{ color:"var(--text-dim)" }}>Highlights you've opened recently on this device.</p>
+      {list.length === 0 ? (
+        <EmptyState title="Nothing watched yet" subtitle="Open a highlight and it will show up here."
+          cta={<a href="#/" className="focus-ring px-5 py-2.5 rounded-xl text-[13.5px] font-semibold" style={{ background:"var(--orange)", color:"#0A0A0B" }}>Browse highlights</a>} />
+      ) : (
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+          {list.map(h => <HighlightCard key={h.id} h={h} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SettingsPage(){
+  const [theme, setTheme] = useState(() => document.documentElement.getAttribute("data-theme") || "dark");
+  const [autoplay, setAutoplay] = useState(() => safeGet("kh_autoplay", false));
+  useEffect(()=>{ document.documentElement.setAttribute("data-theme", theme); safeSet("kh_theme", theme); },[theme]);
+  useEffect(()=>{ safeSet("kh_autoplay", autoplay); },[autoplay]);
+
+  const Toggle = ({ checked, onChange }) => (
+    <button onClick={()=>onChange(!checked)} className="focus-ring w-11 h-6 rounded-full relative transition-colors"
+      style={{ background: checked ? "var(--orange)" : "var(--border)" }}>
+      <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all" style={{ left: checked ? "22px" : "2px" }} />
+    </button>
+  );
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 pt-6 pb-16 fade-in">
+      <h1 className="display text-[24px] md:text-[32px]" style={{ color:"var(--text)" }}>Settings</h1>
+      <p className="text-[13.5px] mt-1.5" style={{ color:"var(--text-dim)" }}>Preferences are stored on this device only.</p>
+
+      <div className="mt-6 rounded-2xl border divide-y" style={{ background:"var(--card)", borderColor:"var(--border)" }}>
+        <div className="flex items-center justify-between px-4 py-4">
+          <div>
+            <p className="text-[13.5px] font-medium" style={{ color:"var(--text)" }}>Dark theme</p>
+            <p className="text-[12px]" style={{ color:"var(--text-faint)" }}>Switch between dark and light appearance</p>
+          </div>
+          <Toggle checked={theme==="dark"} onChange={(v)=>setTheme(v?"dark":"light")} />
+        </div>
+        <div className="flex items-center justify-between px-4 py-4" style={{ borderColor:"var(--border-soft)" }}>
+          <div>
+            <p className="text-[13.5px] font-medium" style={{ color:"var(--text)" }}>Autoplay on open</p>
+            <p className="text-[12px]" style={{ color:"var(--text-faint)" }}>Start playback automatically on a highlight page</p>
+          </div>
+          <Toggle checked={autoplay} onChange={setAutoplay} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== FOOTER ============================== */
+function Footer(){
+  return (
+    <footer className="border-t mt-6" style={{ borderColor:"var(--border-soft)", background:"var(--bg-raised)" }}>
+      <div className="max-w-6xl mx-auto px-4 py-10">
+        <Logo />
+        <p className="text-[12.5px] mt-3 max-w-sm" style={{ color:"var(--text-dim)" }}>
+          An unofficial fan-made collection of Virat Kohli batting moments.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[12.5px] font-medium">
+          {[["Home","#/"],["Popular Shots","#/shots/cover-drive"],["Best Innings","#/best-innings"],["About","#/about"],["Contact","#/about"]].map(([l,h])=>(
+            <a key={l} href={h} className="focus-ring hover:text-[var(--orange)] transition-colors" style={{ color:"var(--text-dim)" }}>{l}</a>
+          ))}
+        </div>
+        <p className="text-[11px] mt-6 pt-6 border-t leading-relaxed max-w-xl" style={{ color:"var(--text-faint)", borderColor:"var(--border-soft)" }}>
+          KohliHub is an unofficial fan project and is not affiliated with Virat Kohli, BCCI, ICC, or any broadcaster. All media rights belong to their respective owners.
+        </p>
+      </div>
+    </footer>
+  );
+}
+
+/* ============================== APP ROOT ============================== */
+function App(){
+  const route = useRoute();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  useEffect(()=>{
+    const saved = safeGet("kh_theme", null);
+    if(saved) document.documentElement.setAttribute("data-theme", saved);
+  },[]);
+
+  const activeCategory = route.page === "shot" ? route.param : (route.page === "home" ? "all" : null);
+  const showCategoryNav = route.page === "home" || route.page === "shot";
+
+  let page;
+  if(route.page === "home") page = <HomePage />;
+  else if(route.page === "shot") page = <ShotPage shotId={route.param} />;
+  else if(route.page === "highlight") page = <HighlightDetailPage id={route.param} />;
+  else if(route.page === "best-innings") page = <BestInningsPage />;
+  else if(route.page === "about") page = <AboutPage />;
+  else if(route.page === "favorites") page = <FavoritesPage />;
+  else if(route.page === "recent") page = <RecentPage />;
+  else if(route.page === "settings") page = <SettingsPage />;
+  else page = <HomePage />;
+
+  return (
+    <AppProvider>
+      <div style={{ minHeight:"100vh", background:"var(--bg)" }}>
+        <Header onMenu={()=>setDrawerOpen(true)} onSearch={()=>setSearchOpen(true)} onProfile={()=>setProfileOpen(true)} />
+        {showCategoryNav && <CategoryNav active={activeCategory} />}
+        <main>{page}</main>
+        <Footer />
+        <Drawer open={drawerOpen} onClose={()=>setDrawerOpen(false)} />
+        <SearchModal open={searchOpen} onClose={()=>setSearchOpen(false)} />
+        <ProfileMenu open={profileOpen} onClose={()=>setProfileOpen(false)} />
+      </div>
+    </AppProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
